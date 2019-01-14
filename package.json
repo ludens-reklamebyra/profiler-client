@@ -1,5 +1,5 @@
 {
-  "name": "profiler-client",
+  "name": "@ludens-reklame/profiler-client",
   "version": "0.0.1",
   "description": "Profiler for all",
   "main": "dist/index.js",
