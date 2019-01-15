@@ -12,6 +12,16 @@ interface PushOpts {
   contactRef?: string;
 }
 
+interface UpdateContactData {
+  name?: string;
+  email?: string;
+}
+
+interface UpdateContactOpts {
+  data: UpdateContactData;
+  contactRef?: string;
+}
+
 interface RequestData {
   [key: string]: any;
 }
@@ -51,12 +61,30 @@ class Profiler {
     }
   }
 
-  private async network(endpoint: string, data: RequestData) {
+  public async updateContact(opts: UpdateContactOpts) {
     try {
-      const url = `${profilerURL}/${endpoint}?${qs.stringify(data)}`;
+      const endpoint = 'contacts/' + (opts.contactRef || this.contactRef);
+
+      await this.network(endpoint, opts.data, true);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private async network(endpoint: string, data: RequestData, asJSON?: boolean) {
+    try {
+      let url = `${profilerURL}/${endpoint}`;
+
+      if (!asJSON) {
+        url = url + `?${qs.stringify(data)}`;
+      }
 
       const response = await fetch(url, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: asJSON ? JSON.stringify(data) : null
       });
 
       const json = (await response.json()) as ResponseBody;
