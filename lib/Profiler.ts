@@ -81,7 +81,7 @@ class Profiler {
 
       const response = await fetch(url, {
         method: 'POST',
-        cache: 'no-cache',
+        mode: 'cors',
         headers: {
           'Content-Type': 'application/json'
         },
