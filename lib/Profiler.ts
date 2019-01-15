@@ -1,6 +1,6 @@
 import * as qs from 'qs';
 
-const profilerURL = 'http://localhost:3001';
+const profilerURL = 'https://attentionplz.herokuapp.com';
 
 interface Opts {
   organization: string;
