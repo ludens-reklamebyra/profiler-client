@@ -82,9 +82,17 @@ class Profiler {
   private async handlePersonalizations() {
     try {
       if (window) {
-        const response = await fetch(`${profilerURL}/personalizations`, {
-          mode: 'cors'
-        });
+        const query = {
+          organization: this.organization,
+          contactRef: this.contactRef
+        };
+
+        const response = await fetch(
+          `${profilerURL}/personalizations?${qs.stringify(query)}`,
+          {
+            mode: 'cors'
+          }
+        );
 
         if (response.status === 200) {
           const data = (await response.json()) as Personalization[];
