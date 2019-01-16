@@ -37,6 +37,7 @@ interface Personalization {
   name: string;
   js: string | null;
   html: string | null;
+  htmlQuerySelector: string | null;
 }
 
 class Profiler {
@@ -118,7 +119,14 @@ class Profiler {
           const ps = personalizations[i];
 
           if (ps.html) {
-            document.body.insertAdjacentHTML('beforeend', ps.html);
+            const elems = document.querySelectorAll(
+              ps.htmlQuerySelector ? ps.htmlQuerySelector : 'body'
+            );
+
+            for (let j = 0; j < elems.length; j++) {
+              const elem = elems[j];
+              elem.insertAdjacentHTML('beforeend', ps.html);
+            }
           }
 
           if (ps.js) {
