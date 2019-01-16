@@ -113,26 +113,24 @@ class Profiler {
       if (window) {
         const personalizations = await this.getPersonalizations();
 
-        document.addEventListener('DOMContentLoaded', () => {
-          for (let i = 0; i < personalizations.length; i++) {
-            const ps = personalizations[i];
+        for (let i = 0; i < personalizations.length; i++) {
+          const ps = personalizations[i];
 
-            if (ps.code.includes('<script>')) {
-              var scriptContent = ps.code.match(
-                new RegExp('<script>' + '(.*)' + '</script>')
-              );
+          if (ps.code.includes('<script>')) {
+            var scriptContent = ps.code.match(
+              new RegExp('<script>' + '(.*)' + '</script>')
+            );
 
-              if (scriptContent && scriptContent.length > 1) {
-                var scriptTag = document.createElement('script');
-                scriptTag.innerHTML = scriptContent[1];
+            if (scriptContent && scriptContent.length > 1) {
+              var scriptTag = document.createElement('script');
+              scriptTag.innerHTML = scriptContent[1];
 
-                document.body.appendChild(scriptTag);
-              }
-            } else {
-              document.body.insertAdjacentHTML('beforeend', ps.code);
+              document.body.appendChild(scriptTag);
             }
+          } else {
+            document.body.insertAdjacentHTML('beforeend', ps.code);
           }
-        });
+        }
       }
     } catch (error) {
       console.error(error);
