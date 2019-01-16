@@ -35,7 +35,8 @@ interface ResponseBody {
 interface Personalization {
   _id: string;
   name: string;
-  code: string;
+  js: string | null;
+  html: string | null;
 }
 
 class Profiler {
@@ -116,19 +117,14 @@ class Profiler {
         for (let i = 0; i < personalizations.length; i++) {
           const ps = personalizations[i];
 
-          if (ps.code.includes('<script>')) {
-            var scriptContent = ps.code.match(
-              new RegExp('<script>' + '(.*)' + '</script>')
-            );
+          if (ps.html) {
+            document.body.insertAdjacentHTML('beforeend', ps.html);
+          }
 
-            if (scriptContent && scriptContent.length > 1) {
-              var scriptTag = document.createElement('script');
-              scriptTag.innerHTML = scriptContent[1];
-
-              document.body.appendChild(scriptTag);
-            }
-          } else {
-            document.body.insertAdjacentHTML('beforeend', ps.code);
+          if (ps.js) {
+            const scriptTag = document.createElement('script');
+            scriptTag.innerHTML = ps.js;
+            document.body.appendChild(scriptTag);
           }
         }
       }
