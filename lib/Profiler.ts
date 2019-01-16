@@ -38,6 +38,7 @@ interface Personalization {
   js: string | null;
   html: string | null;
   htmlQuerySelector: string | null;
+  htmlPlacement: string | null;
 }
 
 class Profiler {
@@ -125,7 +126,8 @@ class Profiler {
 
             for (let j = 0; j < elems.length; j++) {
               const elem = elems[j];
-              elem.insertAdjacentHTML('beforeend', ps.html);
+              //@ts-ignore How to fix this?
+              elem.insertAdjacentHTML(ps.htmlPlacement || 'beforeend', ps.html);
             }
           }
 
