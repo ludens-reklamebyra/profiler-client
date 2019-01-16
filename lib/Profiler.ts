@@ -92,7 +92,7 @@ class Profiler {
           document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < data.length; i++) {
               const ps = data[i];
-              document.body.append(ps.code);
+              document.body.innerHTML += ps.code;
             }
           });
         }
