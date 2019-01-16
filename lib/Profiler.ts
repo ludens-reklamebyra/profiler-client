@@ -116,7 +116,21 @@ class Profiler {
         document.addEventListener('DOMContentLoaded', () => {
           for (let i = 0; i < personalizations.length; i++) {
             const ps = personalizations[i];
-            document.body.innerHTML += ps.code;
+
+            if (ps.code.includes('<script>')) {
+              var scriptContent = ps.code.match(
+                new RegExp('<script>' + '(.*)' + '</script>')
+              );
+
+              if (scriptContent && scriptContent.length > 1) {
+                var scriptTag = document.createElement('script');
+                scriptTag.innerHTML = scriptContent[1];
+
+                document.body.appendChild(scriptTag);
+              }
+            } else {
+              document.body.insertAdjacentHTML('beforeend', ps.code);
+            }
           }
         });
       }
