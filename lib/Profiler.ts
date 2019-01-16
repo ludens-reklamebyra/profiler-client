@@ -4,6 +4,7 @@ const profilerURL = 'https://attentionplz.herokuapp.com';
 
 interface Opts {
   organization: string;
+  personalize?: boolean;
 }
 
 interface PushOpts {
@@ -48,7 +49,9 @@ class Profiler {
       this.contactRef = window.localStorage.getItem('profilerRef');
     }
 
-    this.handlePersonalizations();
+    if (opts.personalize) {
+      this.handlePersonalizations();
+    }
   }
 
   public async push(opts: PushOpts) {
@@ -79,31 +82,43 @@ class Profiler {
     }
   }
 
+  public async getPersonalizations(): Promise<Personalization[]> {
+    try {
+      const query = {
+        organization: this.organization,
+        contactRef: this.contactRef
+      };
+
+      const response = await fetch(
+        `${profilerURL}/personalizations?${qs.stringify(query)}`,
+        {
+          mode: 'cors'
+        }
+      );
+
+      if (response.status === 200) {
+        return (await response.json()) as Personalization[];
+      }
+
+      return [];
+    } catch (error) {
+      console.error(error);
+    }
+
+    return [];
+  }
+
   private async handlePersonalizations() {
     try {
       if (window) {
-        const query = {
-          organization: this.organization,
-          contactRef: this.contactRef
-        };
+        const personalizations = await this.getPersonalizations();
 
-        const response = await fetch(
-          `${profilerURL}/personalizations?${qs.stringify(query)}`,
-          {
-            mode: 'cors'
+        document.addEventListener('DOMContentLoaded', () => {
+          for (let i = 0; i < personalizations.length; i++) {
+            const ps = personalizations[i];
+            document.body.innerHTML += ps.code;
           }
-        );
-
-        if (response.status === 200) {
-          const data = (await response.json()) as Personalization[];
-
-          document.addEventListener('DOMContentLoaded', () => {
-            for (let i = 0; i < data.length; i++) {
-              const ps = data[i];
-              document.body.innerHTML += ps.code;
-            }
-          });
-        }
+        });
       }
     } catch (error) {
       console.error(error);
