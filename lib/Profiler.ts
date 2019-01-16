@@ -31,6 +31,12 @@ interface ResponseBody {
   ref: string;
 }
 
+interface Personalization {
+  _id: string;
+  name: string;
+  code: string;
+}
+
 class Profiler {
   private organization: string;
   private contactRef: string | null;
@@ -41,6 +47,8 @@ class Profiler {
     if (window && 'localStorage' in window) {
       this.contactRef = window.localStorage.getItem('profilerRef');
     }
+
+    this.handlePersonalizations();
   }
 
   public async push(opts: PushOpts) {
@@ -66,6 +74,29 @@ class Profiler {
       const endpoint = 'contacts/' + (opts.contactRef || this.contactRef);
 
       await this.network(endpoint, opts.data, true);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private async handlePersonalizations() {
+    try {
+      if (window) {
+        const response = await fetch(`${profilerURL}/personalizations`, {
+          mode: 'cors'
+        });
+
+        if (response.status === 200) {
+          const data = (await response.json()) as Personalization[];
+
+          document.addEventListener('DOMContentLoaded', () => {
+            for (let i = 0; i < data.length; i++) {
+              const ps = data[i];
+              document.body.append(ps.code);
+            }
+          });
+        }
+      }
     } catch (error) {
       console.error(error);
     }
