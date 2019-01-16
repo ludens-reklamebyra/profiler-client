@@ -126,8 +126,16 @@ class Profiler {
 
             for (let j = 0; j < elems.length; j++) {
               const elem = elems[j];
-              //@ts-ignore How to fix this?
-              elem.insertAdjacentHTML(ps.htmlPlacement || 'beforeend', ps.html);
+
+              if (ps.htmlPlacement === 'replace') {
+                elem.innerHTML = ps.html;
+              } else {
+                elem.insertAdjacentHTML(
+                  //@ts-ignore How to fix this?
+                  ps.htmlPlacement || 'beforeend',
+                  ps.html
+                );
+              }
             }
           }
 
