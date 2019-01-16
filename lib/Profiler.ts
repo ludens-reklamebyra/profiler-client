@@ -90,7 +90,7 @@ class Profiler {
       };
 
       const response = await fetch(
-        `${profilerURL}/personalizations?${qs.stringify(query)}`,
+        `${profilerURL}/personalization?${qs.stringify(query)}`,
         {
           mode: 'cors'
         }
