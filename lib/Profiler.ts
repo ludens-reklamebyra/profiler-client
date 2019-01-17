@@ -44,15 +44,18 @@ interface Personalization {
 class Profiler {
   private organization: string;
   private contactRef: string | null;
+  private personalize: boolean;
+  private hasPersonalized: boolean = false;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
+    this.personalize = opts.personalize || false;
 
     if (window && 'localStorage' in window) {
       this.contactRef = window.localStorage.getItem('profilerRef');
     }
 
-    if (opts.personalize) {
+    if (this.personalize && this.contactRef) {
       this.handlePersonalizations();
     }
   }
@@ -145,6 +148,8 @@ class Profiler {
             document.body.appendChild(scriptTag);
           }
         }
+
+        this.hasPersonalized = true;
       }
     } catch (error) {
       console.error(error);
@@ -173,6 +178,10 @@ class Profiler {
       if (json.ref && window && 'localStorage' in window) {
         window.localStorage.setItem('profilerRef', json.ref);
         this.contactRef = json.ref;
+
+        if (this.personalize && !this.hasPersonalized && this.contactRef) {
+          this.handlePersonalizations();
+        }
       }
     } catch (error) {
       console.error(error);
