@@ -1,6 +1,6 @@
 import * as qs from 'qs';
 
-const profilerURL = 'https://attentionplz.herokuapp.com';
+const profilerURL = 'https://api.profiler.marketing';
 
 interface Opts {
   organization: string;
@@ -46,6 +46,7 @@ class Profiler {
   private contactRef: string | null;
   private personalize: boolean;
   private hasPersonalized: boolean = false;
+  private hasRegisterredReferrer: boolean = false;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
@@ -58,6 +59,8 @@ class Profiler {
     if (this.personalize && this.contactRef) {
       this.handlePersonalizations();
     }
+
+    this.setReferrer();
   }
 
   public async push(opts: PushOpts) {
@@ -112,6 +115,28 @@ class Profiler {
     }
 
     return [];
+  }
+
+  public async setReferrer() {
+    try {
+      if (document && 'referrer' in document && this.contactRef) {
+        const referrer = document.referrer;
+
+        this.hasRegisterredReferrer = true;
+
+        if (referrer.length > 0) {
+          await this.network(
+            profilerURL + '/contacts/' + this.contactRef + '/referrers',
+            {
+              url: referrer
+            },
+            true
+          );
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   private async handlePersonalizations() {
@@ -181,6 +206,10 @@ class Profiler {
 
         if (this.personalize && !this.hasPersonalized && this.contactRef) {
           this.handlePersonalizations();
+        }
+
+        if (!this.hasRegisterredReferrer && this.contactRef) {
+          this.setReferrer();
         }
       }
     } catch (error) {
