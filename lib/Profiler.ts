@@ -46,7 +46,7 @@ class Profiler {
   private contactRef: string | null;
   private personalize: boolean;
   private hasPersonalized: boolean = false;
-  private hasRegisterredReferrer: boolean = false;
+  private hasRegisteredService: boolean = false;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
@@ -60,7 +60,7 @@ class Profiler {
       this.handlePersonalizations();
     }
 
-    this.setReferrer();
+    this.registerService();
   }
 
   public async push(opts: PushOpts) {
@@ -117,18 +117,35 @@ class Profiler {
     return [];
   }
 
-  public async setReferrer() {
+  public async registerService() {
     try {
-      if (document && 'referrer' in document && this.contactRef) {
-        const referrer = document.referrer;
+      if (
+        document &&
+        'referrer' in document &&
+        window &&
+        'location' in window &&
+        this.contactRef
+      ) {
+        const firstParty = window.location.href;
+        const thirdParty = document.referrer;
 
-        this.hasRegisterredReferrer = true;
+        this.hasRegisteredService = true;
 
-        if (referrer.length > 0) {
-          await this.network(
+        if (firstParty.length > 0) {
+          this.network(
             profilerURL + '/contacts/' + this.contactRef + '/referrers',
             {
-              url: referrer
+              url: firstParty
+            },
+            true
+          );
+        }
+
+        if (thirdParty.length > 0) {
+          this.network(
+            profilerURL + '/contacts/' + this.contactRef + '/referrers',
+            {
+              url: thirdParty
             },
             true
           );
@@ -208,8 +225,8 @@ class Profiler {
           this.handlePersonalizations();
         }
 
-        if (!this.hasRegisterredReferrer && this.contactRef) {
-          this.setReferrer();
+        if (!this.hasRegisteredService && this.contactRef) {
+          this.registerService();
         }
       }
     } catch (error) {
