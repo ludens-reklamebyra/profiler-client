@@ -133,7 +133,7 @@ class Profiler {
 
         if (firstParty.length > 0) {
           this.network(
-            profilerURL + '/contacts/' + this.contactRef + '/referrers',
+            'contacts/' + this.contactRef + '/referrers',
             {
               url: firstParty
             },
@@ -143,7 +143,7 @@ class Profiler {
 
         if (thirdParty.length > 0) {
           this.network(
-            profilerURL + '/contacts/' + this.contactRef + '/referrers',
+            'contacts/' + this.contactRef + '/referrers',
             {
               url: thirdParty
             },
