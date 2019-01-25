@@ -46,7 +46,7 @@ class Profiler {
   private contactRef: string | null;
   private personalize: boolean;
   private hasPersonalized: boolean = false;
-  private hasRegisteredService: boolean = false;
+  private hasRegisteredSource: boolean = false;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
@@ -60,7 +60,7 @@ class Profiler {
       this.handlePersonalizations();
     }
 
-    this.registerService();
+    this.registerSource();
   }
 
   public async push(opts: PushOpts) {
@@ -117,7 +117,7 @@ class Profiler {
     return [];
   }
 
-  public async registerService() {
+  public async registerSource() {
     try {
       if (
         document &&
@@ -129,27 +129,16 @@ class Profiler {
         const firstParty = window.location.href;
         const thirdParty = document.referrer;
 
-        this.hasRegisteredService = true;
+        this.hasRegisteredSource = true;
 
-        if (firstParty.length > 0) {
-          this.network(
-            'contacts/' + this.contactRef + '/referrers',
-            {
-              url: firstParty
-            },
-            true
-          );
-        }
-
-        if (thirdParty.length > 0) {
-          this.network(
-            'contacts/' + this.contactRef + '/referrers',
-            {
-              url: thirdParty
-            },
-            true
-          );
-        }
+        await this.network(
+          'contacts/' + this.contactRef + '/sources',
+          {
+            firstParty,
+            thirdParty
+          },
+          true
+        );
       }
     } catch (error) {
       console.error(error);
@@ -225,8 +214,8 @@ class Profiler {
           this.handlePersonalizations();
         }
 
-        if (!this.hasRegisteredService && this.contactRef) {
-          this.registerService();
+        if (!this.hasRegisteredSource && this.contactRef) {
+          this.registerSource();
         }
       }
     } catch (error) {
