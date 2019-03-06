@@ -41,6 +41,8 @@ interface Personalization {
   htmlPlacement: string | null;
 }
 
+const PERSONALIZATION_CLASS_NAME = '__prfPrs';
+
 class Profiler {
   private organization: string;
   private contactRef: string | null;
@@ -76,6 +78,8 @@ class Profiler {
         ref: opts.contactRef || this.contactRef,
         value: opts.value
       });
+
+      this.handlePersonalizations();
     } catch (error) {
       console.error(error);
     }
@@ -86,6 +90,8 @@ class Profiler {
       const endpoint = 'contacts/' + (opts.contactRef || this.contactRef);
 
       await this.network(endpoint, opts.data, true);
+
+      this.handlePersonalizations();
     } catch (error) {
       console.error(error);
     }
@@ -139,6 +145,8 @@ class Profiler {
           },
           true
         );
+
+        this.handlePersonalizations();
       }
     } catch (error) {
       console.error(error);
@@ -149,6 +157,8 @@ class Profiler {
     try {
       if (window) {
         const personalizations = await this.getPersonalizations();
+
+        this.removePersonalizations();
 
         for (let i = 0; i < personalizations.length; i++) {
           const ps = personalizations[i];
@@ -162,12 +172,12 @@ class Profiler {
               const elem = elems[j];
 
               if (ps.htmlPlacement === 'replace') {
-                elem.innerHTML = ps.html;
+                elem.innerHTML = this.wrapDom(ps.html);
               } else {
                 elem.insertAdjacentHTML(
                   //@ts-ignore How to fix this?
                   ps.htmlPlacement || 'beforeend',
-                  ps.html
+                  this.wrapDom(ps.html)
                 );
               }
             }
@@ -220,6 +230,23 @@ class Profiler {
       }
     } catch (error) {
       console.error(error);
+    }
+  }
+
+  private wrapDom(html: string): string {
+    return (
+      '<span class="' + PERSONALIZATION_CLASS_NAME + '">' + html + '</span>'
+    );
+  }
+
+  private removePersonalizations() {
+    const elements = document.getElementsByClassName(
+      PERSONALIZATION_CLASS_NAME
+    );
+
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i];
+      element.remove();
     }
   }
 }
