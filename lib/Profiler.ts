@@ -250,7 +250,7 @@ class Profiler {
       }
     }
 
-    return response;
+    return response.clone();
   }
 
   private wrapDom(html: string): string {
