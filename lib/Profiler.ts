@@ -235,7 +235,9 @@ class Profiler {
       body: asJSON ? JSON.stringify(data) : null
     });
 
-    const json = (await response.json()) as ResponseBody;
+    const internalResponse = response.clone();
+
+    const json = (await internalResponse.json()) as ResponseBody;
 
     if (json.ref && window && 'localStorage' in window) {
       window.localStorage.setItem('profilerRef', json.ref);
@@ -250,7 +252,7 @@ class Profiler {
       }
     }
 
-    return response.clone();
+    return response;
   }
 
   private wrapDom(html: string): string {
