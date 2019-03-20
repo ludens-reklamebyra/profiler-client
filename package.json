@@ -1,6 +1,6 @@
 {
   "name": "@ludens-reklame/profiler-client",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Profiler for all",
   "main": "dist/index.js",
   "files": [
