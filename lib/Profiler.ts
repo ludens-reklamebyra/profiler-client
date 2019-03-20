@@ -41,6 +41,12 @@ interface Personalization {
   htmlPlacement: string | null;
 }
 
+interface CollectOpts {
+  campaign: string;
+  collector: string;
+  data: RequestData;
+}
+
 const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 
 class Profiler {
@@ -153,6 +159,18 @@ class Profiler {
     }
   }
 
+  public async collect(opts: CollectOpts): Promise<Response> {
+    return await this.network(
+      'campaigns/' +
+        opts.campaign +
+        '/collectors/' +
+        opts.collector +
+        '/collect',
+      opts.data,
+      true
+    );
+  }
+
   private async handlePersonalizations() {
     try {
       if (window) {
@@ -197,40 +215,42 @@ class Profiler {
     }
   }
 
-  private async network(endpoint: string, data: RequestData, asJSON?: boolean) {
-    try {
-      let url = `${profilerURL}/${endpoint}`;
+  private async network(
+    endpoint: string,
+    data: RequestData,
+    asJSON?: boolean
+  ): Promise<Response> {
+    let url = `${profilerURL}/${endpoint}`;
 
-      if (!asJSON) {
-        url = url + `?${qs.stringify(data)}`;
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: asJSON ? JSON.stringify(data) : null
-      });
-
-      const json = (await response.json()) as ResponseBody;
-
-      if (json.ref && window && 'localStorage' in window) {
-        window.localStorage.setItem('profilerRef', json.ref);
-        this.contactRef = json.ref;
-
-        if (this.personalize && !this.hasPersonalized && this.contactRef) {
-          this.handlePersonalizations();
-        }
-
-        if (!this.hasRegisteredSource && this.contactRef) {
-          this.registerSource();
-        }
-      }
-    } catch (error) {
-      console.error(error);
+    if (!asJSON) {
+      url = url + `?${qs.stringify(data)}`;
     }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: asJSON ? JSON.stringify(data) : null
+    });
+
+    const json = (await response.json()) as ResponseBody;
+
+    if (json.ref && window && 'localStorage' in window) {
+      window.localStorage.setItem('profilerRef', json.ref);
+      this.contactRef = json.ref;
+
+      if (this.personalize && !this.hasPersonalized && this.contactRef) {
+        this.handlePersonalizations();
+      }
+
+      if (!this.hasRegisteredSource && this.contactRef) {
+        this.registerSource();
+      }
+    }
+
+    return response;
   }
 
   private wrapDom(html: string): string {
