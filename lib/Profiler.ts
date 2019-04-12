@@ -1,4 +1,5 @@
 import * as qs from 'qs';
+import * as Cookies from 'js-cookie';
 
 const profilerURL = 'https://api.profiler.marketing';
 
@@ -51,7 +52,7 @@ const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 
 class Profiler {
   private organization: string;
-  private contactRef: string | null;
+  private contactRef: string | undefined;
   private personalize: boolean;
   private hasPersonalized: boolean = false;
   private hasRegisteredSource: boolean = false;
@@ -59,10 +60,7 @@ class Profiler {
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
-
-    if (window && 'localStorage' in window) {
-      this.contactRef = window.localStorage.getItem('profilerRef');
-    }
+    this.contactRef = Cookies.get('__profiler');
 
     if (this.personalize && this.contactRef) {
       this.handlePersonalizations();
@@ -243,8 +241,8 @@ class Profiler {
 
     const json = (await internalResponse.json()) as ResponseBody;
 
-    if (json.ref && window && 'localStorage' in window) {
-      window.localStorage.setItem('profilerRef', json.ref);
+    if (json.ref) {
+      Cookies.set('__profiler', json.ref, { expires: 365 * 5 });
       this.contactRef = json.ref;
 
       if (this.personalize && !this.hasPersonalized && this.contactRef) {
