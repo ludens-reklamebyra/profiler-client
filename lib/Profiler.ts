@@ -105,6 +105,10 @@ class Profiler {
 
   public async getPersonalizations(): Promise<Personalization[]> {
     try {
+      if (!this.contactRef) {
+        return [];
+      }
+
       const query = {
         organization: this.organization,
         contactRef: this.contactRef
