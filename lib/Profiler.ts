@@ -8,9 +8,17 @@ interface Opts {
   personalize?: boolean;
 }
 
-interface PushOpts {
+interface PushDataPointOpts {
   dataPoint: string;
   value?: any;
+  contactRef?: string;
+}
+
+interface PushActionOpts {
+  category: string;
+  action?: string;
+  label?: string;
+  value?: number;
   contactRef?: string;
 }
 
@@ -69,7 +77,7 @@ class Profiler {
     this.registerSource();
   }
 
-  public async push(opts: PushOpts) {
+  public async pushDataPoint(opts: PushDataPointOpts) {
     try {
       const endpoint =
         'organizations/' +
@@ -82,6 +90,28 @@ class Profiler {
         ref: opts.contactRef || this.contactRef,
         value: opts.value
       });
+
+      this.handlePersonalizations();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  public async pushAction(opts: PushActionOpts) {
+    try {
+      const endpoint =
+        'contacts/' + (opts.contactRef || this.contactRef) + '/actions';
+
+      await this.network(
+        endpoint,
+        {
+          category: opts.category,
+          action: opts.action,
+          label: opts.label,
+          value: opts.value
+        },
+        true
+      );
 
       this.handlePersonalizations();
     } catch (error) {
