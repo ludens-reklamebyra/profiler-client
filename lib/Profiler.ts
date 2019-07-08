@@ -16,10 +16,11 @@ interface PushDataPointOpts {
 
 interface PushActionOpts {
   category: string;
-  action?: string;
+  action: string;
   label?: string;
   value?: number;
   contactRef?: string;
+  contactData?: ContactData;
 }
 
 interface UpdateContactData {
@@ -34,6 +35,18 @@ interface UpdateContactOpts {
 
 interface RequestData {
   [key: string]: any;
+}
+
+interface ContactData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressZip?: string;
+  addressCounty?: string;
+  addressCity?: string;
+  addressCountry?: string;
 }
 
 interface ResponseBody {
@@ -99,8 +112,7 @@ class Profiler {
 
   public async pushAction(opts: PushActionOpts) {
     try {
-      const endpoint =
-        'contacts/' + (opts.contactRef || this.contactRef) + '/actions';
+      const endpoint = 'organizations/' + this.organization + '/actions/push';
 
       await this.network(
         endpoint,
@@ -108,7 +120,9 @@ class Profiler {
           category: opts.category,
           action: opts.action,
           label: opts.label,
-          value: opts.value
+          value: opts.value,
+          ref: opts.contactRef,
+          contactData: opts.contactData
         },
         true
       );
