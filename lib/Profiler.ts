@@ -254,6 +254,38 @@ class Profiler {
     );
   }
 
+  public async readMeta() {
+    if (window && document) {
+      const metas = document.getElementsByTagName('meta');
+      const dpsToPush: DataPoint[] = [];
+
+      for (let i = 0; i < metas.length; i++) {
+        const meta = metas[i];
+
+        if (meta.getAttribute('name') === 'profiler:interests') {
+          const contents = (meta.getAttribute('content') || '').split(',');
+
+          for (let j = 0; j < contents.length; j++) {
+            const contentArr = contents[j].split(':');
+
+            if (contentArr.length > 0) {
+              const ref = contentArr[0];
+              const weight =
+                contentArr.length > 1 ? parseInt(contentArr[1]) : undefined;
+
+              dpsToPush.push({
+                dataPoint: ref,
+                value: weight
+              });
+            }
+          }
+        }
+      }
+
+      await this.pushDataPoints({ dataPoints: dpsToPush });
+    }
+  }
+
   private async handlePersonalizations() {
     try {
       if (window) {
@@ -352,38 +384,6 @@ class Profiler {
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i];
       element.remove();
-    }
-  }
-
-  private async readMeta() {
-    if (window && document) {
-      const metas = document.getElementsByTagName('meta');
-      const dpsToPush: DataPoint[] = [];
-
-      for (let i = 0; i < metas.length; i++) {
-        const meta = metas[i];
-
-        if (meta.getAttribute('name') === 'profiler:interests') {
-          const contents = (meta.getAttribute('content') || '').split(',');
-
-          for (let j = 0; j < contents.length; j++) {
-            const contentArr = contents[j].split(':');
-
-            if (contentArr.length > 0) {
-              const ref = contentArr[0];
-              const weight =
-                contentArr.length > 1 ? parseInt(contentArr[1]) : undefined;
-
-              dpsToPush.push({
-                dataPoint: ref,
-                value: weight
-              });
-            }
-          }
-        }
-      }
-
-      await this.pushDataPoints({ dataPoints: dpsToPush });
     }
   }
 }
