@@ -6,6 +6,7 @@ const profilerURL = 'https://api.profiler.marketing';
 interface Opts {
   organization: string;
   personalize?: boolean;
+  contactEmail?: string;
 }
 
 interface DataPoint {
@@ -84,6 +85,7 @@ const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 class Profiler {
   private organization: string;
   private contactRef: string | undefined;
+  private contactEmail: string | undefined;
   private personalize: boolean;
   private hasPersonalized: boolean = false;
   private hasRegisteredSource: boolean = false;
@@ -92,6 +94,7 @@ class Profiler {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
     this.contactRef = Cookies.get('__profiler');
+    this.contactEmail = opts.contactEmail;
 
     if (this.personalize && this.contactRef) {
       this.handlePersonalizations();
@@ -112,7 +115,7 @@ class Profiler {
 
       await this.network(endpoint, {
         ref: opts.contactRef || this.contactRef,
-        email: opts.contactEmail,
+        email: opts.contactEmail || this.contactEmail,
         value: opts.value
       });
 
@@ -138,7 +141,7 @@ class Profiler {
         promises.push(
           this.network(endpoint, {
             ref: opts.contactRef || this.contactRef,
-            email: opts.contactEmail,
+            email: opts.contactEmail || this.contactEmail,
             value: dp.value
           })
         );
