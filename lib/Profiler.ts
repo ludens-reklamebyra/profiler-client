@@ -15,11 +15,13 @@ interface DataPoint {
 
 interface PushDataPointOpts extends DataPoint {
   contactRef?: string;
+  contactEmail?: string;
 }
 
 interface PushDataPointsOpts {
   dataPoints: DataPoint[];
   contactRef?: string;
+  contactEmail?: string;
 }
 
 interface PushActionOpts {
@@ -110,6 +112,7 @@ class Profiler {
 
       await this.network(endpoint, {
         ref: opts.contactRef || this.contactRef,
+        email: opts.contactEmail,
         value: opts.value
       });
 
@@ -135,6 +138,7 @@ class Profiler {
         promises.push(
           this.network(endpoint, {
             ref: opts.contactRef || this.contactRef,
+            email: opts.contactEmail,
             value: dp.value
           })
         );
