@@ -30,11 +30,6 @@ interface PushActionOpts {
   contactData?: ContactData;
 }
 
-interface UpdateContactData {
-  name?: string;
-  email?: string;
-}
-
 interface RequestData {
   [key: string]: any;
 }
@@ -49,10 +44,6 @@ interface ContactData {
   addressCounty?: string;
   addressCity?: string;
   addressCountry?: string;
-}
-
-interface ResponseBody {
-  message: string;
 }
 
 interface Personalization {
@@ -75,8 +66,6 @@ const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 class Profiler {
   private organization: string;
   private personalize: boolean;
-  private hasPersonalized: boolean = false;
-  private hasRegisteredSource: boolean = false;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
@@ -197,8 +186,6 @@ class Profiler {
         const firstParty = window.location.href;
         const thirdParty = document.referrer;
 
-        this.hasRegisteredSource = true;
-
         await this.network(
           'contacts/register-source',
           {
@@ -295,8 +282,6 @@ class Profiler {
             document.body.appendChild(scriptTag);
           }
         }
-
-        this.hasPersonalized = true;
       }
     } catch (error) {
       console.error(error);
