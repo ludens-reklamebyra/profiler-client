@@ -1,12 +1,10 @@
 import * as qs from 'qs';
-import * as Cookies from 'js-cookie';
 
 const profilerURL = 'https://api.profiler.marketing';
 
 interface Opts {
   organization: string;
   personalize?: boolean;
-  contactEmail?: string;
 }
 
 interface DataPoint {
@@ -15,13 +13,11 @@ interface DataPoint {
 }
 
 interface PushDataPointOpts extends DataPoint {
-  contactRef?: string;
   contactEmail?: string;
 }
 
 interface PushDataPointsOpts {
   dataPoints: DataPoint[];
-  contactRef?: string;
   contactEmail?: string;
 }
 
@@ -30,18 +26,8 @@ interface PushActionOpts {
   action: string;
   label?: string;
   value?: number;
-  contactRef?: string;
+  contactEmail?: string;
   contactData?: ContactData;
-}
-
-interface UpdateContactData {
-  name?: string;
-  email?: string;
-}
-
-interface UpdateContactOpts {
-  data: UpdateContactData;
-  contactRef?: string;
 }
 
 interface RequestData {
@@ -58,11 +44,6 @@ interface ContactData {
   addressCounty?: string;
   addressCity?: string;
   addressCountry?: string;
-}
-
-interface ResponseBody {
-  message: string;
-  ref: string;
 }
 
 interface Personalization {
@@ -84,19 +65,13 @@ const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 
 class Profiler {
   private organization: string;
-  private contactRef: string | undefined;
-  private contactEmail: string | undefined;
   private personalize: boolean;
-  private hasPersonalized: boolean = false;
-  private hasRegisteredSource: boolean = false;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
-    this.contactRef = Cookies.get('__profiler');
-    this.contactEmail = opts.contactEmail;
 
-    if (this.personalize && this.contactRef) {
+    if (this.personalize) {
       this.handlePersonalizations();
     }
 
@@ -114,9 +89,8 @@ class Profiler {
         '/set';
 
       await this.network(endpoint, {
-        ref: opts.contactRef || this.contactRef,
-        email: opts.contactEmail || this.contactEmail,
-        value: opts.value
+        value: opts.value,
+        email: opts.contactEmail
       });
 
       this.handlePersonalizations();
@@ -140,9 +114,8 @@ class Profiler {
 
         promises.push(
           this.network(endpoint, {
-            ref: opts.contactRef || this.contactRef,
-            email: opts.contactEmail || this.contactEmail,
-            value: dp.value
+            value: dp.value,
+            email: opts.contactEmail
           })
         );
       }
@@ -165,7 +138,7 @@ class Profiler {
           action: opts.action,
           label: opts.label,
           value: opts.value,
-          ref: opts.contactRef,
+          email: opts.contactEmail,
           contactData: opts.contactData
         },
         true
@@ -177,33 +150,17 @@ class Profiler {
     }
   }
 
-  public async updateContact(opts: UpdateContactOpts) {
-    try {
-      const endpoint = 'contacts/' + (opts.contactRef || this.contactRef);
-
-      await this.network(endpoint, opts.data, true);
-
-      this.handlePersonalizations();
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   public async getPersonalizations(): Promise<Personalization[]> {
     try {
-      if (!this.contactRef) {
-        return [];
-      }
-
       const query = {
-        organization: this.organization,
-        contactRef: this.contactRef
+        organization: this.organization
       };
 
       const response = await fetch(
         `${profilerURL}/personalization?${qs.stringify(query)}`,
         {
-          mode: 'cors'
+          mode: 'cors',
+          credentials: 'include'
         }
       );
 
@@ -225,16 +182,13 @@ class Profiler {
         document &&
         'referrer' in document &&
         window &&
-        'location' in window &&
-        this.contactRef
+        'location' in window
       ) {
         const firstParty = window.location.href;
         const thirdParty = document.referrer;
 
-        this.hasRegisteredSource = true;
-
         await this.network(
-          'contacts/' + this.contactRef + '/sources',
+          'contacts/register-source',
           {
             firstParty,
             thirdParty
@@ -329,8 +283,6 @@ class Profiler {
             document.body.appendChild(scriptTag);
           }
         }
-
-        this.hasPersonalized = true;
       }
     } catch (error) {
       console.error(error);
@@ -351,28 +303,12 @@ class Profiler {
     const response = await fetch(url, {
       method: 'POST',
       mode: 'cors',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       },
       body: asJSON ? JSON.stringify(data) : null
     });
-
-    const internalResponse = response.clone();
-
-    const json = (await internalResponse.json()) as ResponseBody;
-
-    if (json.ref) {
-      Cookies.set('__profiler', json.ref, { expires: 365 * 5 });
-      this.contactRef = json.ref;
-
-      if (this.personalize && !this.hasPersonalized && this.contactRef) {
-        this.handlePersonalizations();
-      }
-
-      if (!this.hasRegisteredSource && this.contactRef) {
-        this.registerSource();
-      }
-    }
 
     return response;
   }
