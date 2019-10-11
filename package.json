@@ -21,7 +21,6 @@
     "typescript": "^3.2.2"
   },
   "dependencies": {
-    "js-cookie": "^2.2.0",
     "qs": "^6.6.0"
   }
 }
