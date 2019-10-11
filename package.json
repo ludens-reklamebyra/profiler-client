@@ -14,7 +14,6 @@
   "author": "Stian Bakkane <stianba@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@types/js-cookie": "^2.2.2",
     "@types/qs": "^6.5.1",
     "awesome-typescript-loader": "^5.2.1",
     "babel-core": "^6.26.3",
