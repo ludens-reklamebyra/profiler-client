@@ -93,7 +93,7 @@ class Profiler {
     try {
       const endpoint = 'contacts/update';
 
-      await this.network(endpoint, opts.data);
+      await this.network(endpoint, opts.data, true);
 
       this.handlePersonalizations();
     } catch (error) {
