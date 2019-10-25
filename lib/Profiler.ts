@@ -91,7 +91,7 @@ class Profiler {
 
   public async updateProfile(opts: UpdateProfileOpts) {
     try {
-      const endpoint = 'contacts/me';
+      const endpoint = 'contacts/update';
 
       await this.network(endpoint, opts.data);
 
