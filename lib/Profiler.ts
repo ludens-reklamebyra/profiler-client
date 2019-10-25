@@ -84,6 +84,7 @@ class Profiler {
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
+    this.handlePersonalizations();
     this.registerSource();
     this.readMeta();
   }
