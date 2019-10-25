@@ -70,11 +70,6 @@ class Profiler {
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
-
-    if (this.personalize) {
-      this.handlePersonalizations();
-    }
-
     this.registerSource();
     this.readMeta();
   }
@@ -250,6 +245,10 @@ class Profiler {
 
   private async handlePersonalizations() {
     try {
+      if (!this.personalize) {
+        return;
+      }
+
       if (window) {
         const personalizations = await this.getPersonalizations();
 
