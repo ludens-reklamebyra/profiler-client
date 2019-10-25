@@ -239,7 +239,9 @@ class Profiler {
         }
       }
 
-      await this.pushDataPoints({ dataPoints: dpsToPush });
+      if (dpsToPush.length > 0) {
+        await this.pushDataPoints({ dataPoints: dpsToPush });
+      }
     }
   }
 
