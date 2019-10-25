@@ -7,6 +7,20 @@ interface Opts {
   personalize?: boolean;
 }
 
+interface UpdateProfileOpts {
+  data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    addressZip?: string;
+    addressCity?: string;
+    addressCounty?: string;
+    addressCountry?: string;
+  };
+}
+
 interface DataPoint {
   dataPoint: string;
   value?: any;
@@ -72,6 +86,18 @@ class Profiler {
     this.personalize = opts.personalize || false;
     this.registerSource();
     this.readMeta();
+  }
+
+  public async updateProfile(opts: UpdateProfileOpts) {
+    try {
+      const endpoint = 'contacts/me';
+
+      await this.network(endpoint, opts.data);
+
+      this.handlePersonalizations();
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   public async pushDataPoint(opts: PushDataPointOpts) {
