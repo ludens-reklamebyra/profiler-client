@@ -1,8 +1,6 @@
 import * as qs from 'qs';
 import * as cookies from 'js-cookie';
 
-const profilerURL = 'https://api.profiler.marketing';
-
 interface Opts {
   organization: string;
   personalize?: boolean;
@@ -86,6 +84,7 @@ interface PageView {
   exit?: Date;
 }
 
+const PROFILER_URL = 'https://api.profiler.marketing';
 const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 const COOKIE_KEY = '__pid';
 
@@ -197,7 +196,7 @@ class Profiler {
       };
 
       const response = await fetch(
-        `${profilerURL}/personalization?${qs.stringify(query)}`,
+        `${PROFILER_URL}/personalization?${qs.stringify(query)}`,
         {
           mode: 'cors',
           credentials: 'include'
@@ -222,7 +221,8 @@ class Profiler {
         document &&
         'referrer' in document &&
         window &&
-        'location' in window
+        'location' in window &&
+        !this.pid
       ) {
         const firstParty = window.location.href;
         const thirdParty = document.referrer;
@@ -356,7 +356,7 @@ class Profiler {
       data['ref'] = this.pid;
     }
 
-    let url = `${profilerURL}/${endpoint}`;
+    let url = `${PROFILER_URL}/${endpoint}`;
 
     if (!asJSON) {
       url = url + `?${qs.stringify(data)}`;
@@ -420,23 +420,31 @@ class Profiler {
     if (!!this.pageView) {
       this.pageView.exit = new Date();
 
-      const endpoint =
-        'organizations/' + this.organization + '/page-views/push';
+      if (
+        !!navigator &&
+        'sendBeacon' in navigator &&
+        typeof this.pid === 'string'
+      ) {
+        const endpoint =
+          PROFILER_URL +
+          '/organizations/' +
+          this.organization +
+          '/page-views/push';
 
-      if (!!navigator && 'sendBeacon' in navigator) {
-        navigator.sendBeacon(
-          endpoint,
-          qs.stringify({
-            ...this.pageView,
-            firstParty: window.location.href,
-            thirdParty: document.referrer,
-            ref: this.pid
-          })
-        );
+        const data = new FormData();
+
+        data.append('ref', this.pid);
+
+        for (const key in this.pageView) {
+          if (this.pageView.hasOwnProperty(key)) {
+            data.append(key, this.pageView[key]);
+          }
+        }
+
+        navigator.sendBeacon(endpoint, data);
       }
 
       this.pageView = undefined;
-      this.handlePersonalizations();
     }
   }
 
