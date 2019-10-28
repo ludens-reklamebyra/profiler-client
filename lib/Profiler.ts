@@ -1,4 +1,5 @@
 import * as qs from 'qs';
+import * as cookies from 'js-cookie';
 
 const profilerURL = 'https://api.profiler.marketing';
 
@@ -80,10 +81,12 @@ const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 class Profiler {
   private organization: string;
   private personalize: boolean;
+  private pid?: string;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
+    this.readPidFromCookie();
     this.handlePersonalizations();
     this.registerSource();
     this.readMeta();
@@ -175,7 +178,8 @@ class Profiler {
   public async getPersonalizations(): Promise<Personalization[]> {
     try {
       const query = {
-        organization: this.organization
+        organization: this.organization,
+        ref: this.pid
       };
 
       const response = await fetch(
@@ -323,6 +327,10 @@ class Profiler {
     data: RequestData,
     asJSON?: boolean
   ): Promise<Response> {
+    if (typeof this.pid === 'string') {
+      data['ref'] = this.pid;
+    }
+
     let url = `${profilerURL}/${endpoint}`;
 
     if (!asJSON) {
@@ -338,6 +346,12 @@ class Profiler {
       },
       body: asJSON ? JSON.stringify(data) : null
     });
+
+    const responseJSON = await response.json();
+
+    if (!!responseJSON && 'ref' in responseJSON) {
+      this.pid = responseJSON.ref;
+    }
 
     return response;
   }
@@ -356,6 +370,14 @@ class Profiler {
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i];
       element.remove();
+    }
+  }
+
+  private readPidFromCookie() {
+    const pid = cookies.get('_pid');
+
+    if (typeof pid === 'string') {
+      this.pid = pid;
     }
   }
 }
