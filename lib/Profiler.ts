@@ -230,7 +230,7 @@ class Profiler {
         const firstParty = window.location.href;
         const thirdParty = document.referrer;
 
-        const response = await this.network(
+        const json = await this.network(
           'contacts/new-session',
           {
             organization: this.organization,
@@ -241,8 +241,6 @@ class Profiler {
         );
 
         this.handlePersonalizations();
-
-        const json = await response.json();
 
         if (json && 'sessionId' in json) {
           this.setSid(json.sessionId);
@@ -360,7 +358,7 @@ class Profiler {
     endpoint: string,
     data: RequestData,
     asJSON?: boolean
-  ): Promise<Response> {
+  ): Promise<any> {
     if (typeof this.pid === 'string') {
       data['ref'] = this.pid;
     }
@@ -387,7 +385,7 @@ class Profiler {
       this.setPid(responseJSON.ref as string);
     }
 
-    return response;
+    return responseJSON;
   }
 
   private wrapDom(html: string): string {
