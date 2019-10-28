@@ -86,21 +86,24 @@ interface PageView {
 
 const PROFILER_URL = 'https://api.profiler.marketing';
 const PERSONALIZATION_CLASS_NAME = '__prfPrs';
-const COOKIE_KEY = '__pid';
+const COOKIE_PID_KEY = '__pid';
+const COOKIE_SID_KEY = '__psid';
 
 class Profiler {
   private organization: string;
   private personalize: boolean;
   private pid?: string;
+  private sid?: string;
   private pageView?: PageView;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
     this.readPidFromCookie();
+    this.readSidFromCookie();
     this.handlePersonalizations();
-    this.registerSource();
     this.readMeta();
+    this.newSession();
     this.newPageView();
     this.listenForPageUnload();
   }
@@ -215,20 +218,20 @@ class Profiler {
     return [];
   }
 
-  public async registerSource() {
+  public async newSession() {
     try {
       if (
         document &&
         'referrer' in document &&
         window &&
         'location' in window &&
-        !this.pid
+        !this.sid
       ) {
         const firstParty = window.location.href;
         const thirdParty = document.referrer;
 
-        await this.network(
-          'contacts/register-source',
+        const response = await this.network(
+          'contacts/new-session',
           {
             organization: this.organization,
             firstParty,
@@ -238,6 +241,12 @@ class Profiler {
         );
 
         this.handlePersonalizations();
+
+        const json = await response.json();
+
+        if (json && 'sessionId' in json) {
+          this.setSid(json.sessionId);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -402,17 +411,33 @@ class Profiler {
     if (pid) {
       this.pid = pid;
 
-      cookies.set(COOKIE_KEY, pid, {
+      cookies.set(COOKIE_PID_KEY, pid, {
         expires: 365
       });
     }
   }
 
+  private setSid(sid?: string) {
+    if (sid) {
+      this.sid = sid;
+
+      cookies.set(COOKIE_SID_KEY, sid);
+    }
+  }
+
   private readPidFromCookie() {
-    const pid = cookies.get(COOKIE_KEY);
+    const pid = cookies.get(COOKIE_PID_KEY);
 
     if (typeof pid === 'string') {
       this.pid = pid;
+    }
+  }
+
+  private readSidFromCookie() {
+    const sid = cookies.get(COOKIE_SID_KEY);
+
+    if (typeof sid === 'string') {
+      this.sid = sid;
     }
   }
 
@@ -434,6 +459,10 @@ class Profiler {
         const data = new FormData();
 
         data.append('ref', this.pid);
+
+        if (this.sid) {
+          data.append('sessionId', this.sid);
+        }
 
         for (const key in this.pageView) {
           if (this.pageView.hasOwnProperty(key)) {
