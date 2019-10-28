@@ -296,7 +296,7 @@ class Profiler {
     }
 
     this.pageView = {
-      url: !!opts && !!opts.url ? opts.url : window.location.pathname,
+      url: !!opts && !!opts.url ? opts.url : window.location.href,
       enter: new Date().toISOString()
     };
   }
