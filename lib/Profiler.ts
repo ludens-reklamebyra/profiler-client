@@ -80,8 +80,8 @@ interface PageViewOpts {
 
 interface PageView {
   url: string;
-  enter: Date;
-  exit?: Date;
+  enter: string;
+  exit?: string;
 }
 
 const PROFILER_URL = 'https://api.profiler.marketing';
@@ -297,7 +297,7 @@ class Profiler {
 
     this.pageView = {
       url: !!opts && !!opts.url ? opts.url : window.location.pathname,
-      enter: new Date()
+      enter: new Date().toISOString()
     };
   }
 
@@ -418,7 +418,7 @@ class Profiler {
 
   private endPageView() {
     if (!!this.pageView) {
-      this.pageView.exit = new Date();
+      this.pageView.exit = new Date().toISOString();
 
       if (
         !!navigator &&
