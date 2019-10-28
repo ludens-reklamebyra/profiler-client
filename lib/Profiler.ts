@@ -4,6 +4,7 @@ import * as cookies from 'js-cookie';
 interface Opts {
   organization: string;
   personalize?: boolean;
+  dataPointSetDelay?: number;
 }
 
 interface UpdateProfileOpts {
@@ -88,21 +89,24 @@ const PROFILER_URL = 'https://api.profiler.marketing';
 const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 const COOKIE_PID_KEY = '__pid';
 const COOKIE_SID_KEY = '__psid';
+const DEFAULT_DP_DELAY = 10000;
 
 class Profiler {
   private organization: string;
   private personalize: boolean;
+  private dpDelay: number;
   private pid?: string;
   private sid?: string;
   private pageView?: PageView;
+  private dpDelayTimerId?: number;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
+    this.dpDelay = opts.dataPointSetDelay || DEFAULT_DP_DELAY;
     this.readPidFromCookie();
     this.readSidFromCookie();
     this.handlePersonalizations();
-    this.readMeta();
     this.newSession();
     this.newPageView();
     this.listenForPageUnload();
@@ -263,7 +267,7 @@ class Profiler {
     );
   }
 
-  public async readMeta() {
+  public readMeta() {
     if (window && document) {
       const metas = document.getElementsByTagName('meta');
       const dpsToPush: DataPoint[] = [];
@@ -291,8 +295,10 @@ class Profiler {
         }
       }
 
-      if (dpsToPush.length > 0) {
-        await this.pushDataPoints({ dataPoints: dpsToPush });
+      if (dpsToPush.length > 0 && window) {
+        this.dpDelayTimerId = window.setTimeout(() => {
+          this.pushDataPoints({ dataPoints: dpsToPush });
+        }, this.dpDelay);
       }
     }
   }
@@ -306,6 +312,12 @@ class Profiler {
       url: !!opts && !!opts.url ? opts.url : window.location.href,
       enter: new Date().toISOString()
     };
+
+    if (!!this.dpDelayTimerId && window) {
+      window.clearInterval(this.dpDelayTimerId);
+    }
+
+    this.readMeta();
   }
 
   private async handlePersonalizations() {
