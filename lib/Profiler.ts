@@ -76,6 +76,16 @@ interface CollectOpts {
   data: RequestData;
 }
 
+interface PageViewOpts {
+  url?: string;
+}
+
+interface PageView {
+  url: string;
+  enter: Date;
+  exit?: Date;
+}
+
 const PERSONALIZATION_CLASS_NAME = '__prfPrs';
 const COOKIE_KEY = '__pid';
 
@@ -83,6 +93,7 @@ class Profiler {
   private organization: string;
   private personalize: boolean;
   private pid?: string;
+  private pageView?: PageView;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
@@ -91,6 +102,8 @@ class Profiler {
     this.handlePersonalizations();
     this.registerSource();
     this.readMeta();
+    this.newPageView();
+    this.listenForPageUnload();
   }
 
   public async updateProfile(opts: UpdateProfileOpts) {
@@ -277,6 +290,17 @@ class Profiler {
     }
   }
 
+  public newPageView(opts?: PageViewOpts) {
+    if (!!this.pageView) {
+      this.endPageView();
+    }
+
+    this.pageView = {
+      url: !!opts && !!opts.url ? opts.url : window.location.pathname,
+      enter: new Date()
+    };
+  }
+
   private async handlePersonalizations() {
     try {
       if (!this.personalize) {
@@ -379,7 +403,6 @@ class Profiler {
       this.pid = pid;
 
       cookies.set(COOKIE_KEY, pid, {
-        domain: 'api.profiler.marketing',
         expires: 365
       });
     }
@@ -390,6 +413,36 @@ class Profiler {
 
     if (typeof pid === 'string') {
       this.pid = pid;
+    }
+  }
+
+  private endPageView() {
+    if (!!this.pageView) {
+      this.pageView.exit = new Date();
+
+      const endpoint =
+        'organizations/' + this.organization + '/page-views/push';
+
+      if (!!navigator && 'sendBeacon' in navigator) {
+        navigator.sendBeacon(
+          endpoint,
+          qs.stringify({
+            ...this.pageView,
+            firstParty: window.location.href,
+            thirdParty: document.referrer,
+            ref: this.pid
+          })
+        );
+      }
+
+      this.pageView = undefined;
+      this.handlePersonalizations();
+    }
+  }
+
+  private listenForPageUnload() {
+    if (window && 'addEventListener' in window) {
+      window.addEventListener('unload', this.endPageView);
     }
   }
 }
