@@ -77,6 +77,7 @@ interface CollectOpts {
 }
 
 const PERSONALIZATION_CLASS_NAME = '__prfPrs';
+const COOKIE_KEY = '__pid';
 
 class Profiler {
   private organization: string;
@@ -350,7 +351,7 @@ class Profiler {
     const responseJSON = await response.json();
 
     if (!!responseJSON && 'ref' in responseJSON) {
-      this.pid = responseJSON.ref;
+      this.setPid(responseJSON.ref as string);
     }
 
     return response;
@@ -373,8 +374,19 @@ class Profiler {
     }
   }
 
+  private setPid(pid?: string) {
+    if (pid) {
+      this.pid = pid;
+
+      cookies.set(COOKIE_KEY, pid, {
+        domain: 'api.profiler.marketing',
+        expires: 365
+      });
+    }
+  }
+
   private readPidFromCookie() {
-    const pid = cookies.get('_pid');
+    const pid = cookies.get(COOKIE_KEY);
 
     if (typeof pid === 'string') {
       this.pid = pid;
