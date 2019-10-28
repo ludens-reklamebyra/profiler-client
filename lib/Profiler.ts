@@ -442,7 +442,7 @@ class Profiler {
 
   private listenForPageUnload() {
     if (window && 'addEventListener' in window) {
-      window.addEventListener('unload', this.endPageView);
+      window.addEventListener('unload', () => this.endPageView());
     }
   }
 }
