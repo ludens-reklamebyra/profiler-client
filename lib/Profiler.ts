@@ -5,6 +5,7 @@ interface Opts {
   organization: string;
   personalize?: boolean;
   dataPointSetDelay?: number;
+  contactEmail?: string;
 }
 
 interface UpdateProfileOpts {
@@ -99,11 +100,13 @@ class Profiler {
   private sid?: string;
   private pageView?: PageView;
   private dpDelayTimerId?: number;
+  private contactEmail?: string;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.personalize = opts.personalize || false;
     this.dpDelay = opts.dataPointSetDelay || DEFAULT_DP_DELAY;
+    this.contactEmail = opts.contactEmail;
     this.readPidFromCookie();
     this.readSidFromCookie();
     this.handlePersonalizations();
@@ -135,7 +138,7 @@ class Profiler {
 
       await this.network(endpoint, {
         value: opts.value,
-        email: opts.contactEmail
+        email: opts.contactEmail || this.contactEmail
       });
 
       this.handlePersonalizations();
@@ -160,7 +163,7 @@ class Profiler {
         promises.push(
           this.network(endpoint, {
             value: dp.value,
-            email: opts.contactEmail
+            email: opts.contactEmail || this.contactEmail
           })
         );
       }
@@ -183,7 +186,7 @@ class Profiler {
           action: opts.action,
           label: opts.label,
           value: opts.value,
-          email: opts.contactEmail,
+          email: opts.contactEmail || this.contactEmail,
           contactData: opts.contactData
         },
         true
@@ -238,6 +241,7 @@ class Profiler {
           'contacts/new-session',
           {
             organization: this.organization,
+            email: this.contactEmail,
             firstParty,
             thirdParty
           },
