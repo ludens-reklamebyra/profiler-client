@@ -1,15 +1,12 @@
 import * as qs from "qs";
 import * as cookies from "js-cookie";
 
-type ConsentService = "cookiebot";
-
 interface Opts {
   organization: string;
   personalize?: boolean;
   dataPointSetDelay?: number;
   contactEmail?: string;
   hasConsent?: boolean;
-  consentService?: ConsentService;
 }
 
 interface UpdateProfileOpts {
@@ -106,7 +103,6 @@ class Profiler {
   private pageView?: PageView;
   private dpDelayTimerId?: number;
   private contactEmail?: string;
-  private consentService?: ConsentService;
 
   constructor(opts: Opts) {
     this.organization = opts.organization;
@@ -114,8 +110,6 @@ class Profiler {
     this.personalize = opts.personalize || false;
     this.dpDelay = opts.dataPointSetDelay || DEFAULT_DP_DELAY;
     this.contactEmail = opts.contactEmail;
-    this.consentService = opts.consentService;
-    this.readConsent();
     this.readPidFromCookie();
     this.readSidFromCookie();
     this.handlePersonalizations();
@@ -449,24 +443,6 @@ class Profiler {
       this.sid = sid;
 
       cookies.set(COOKIE_SID_KEY, sid);
-    }
-  }
-
-  private readConsent() {
-    try {
-      if (this.consentService === "cookiebot") {
-        const cookie = cookies.get("CookieConsent");
-
-        if (cookie) {
-          const data = JSON.parse(decodeURIComponent(cookie));
-
-          if (data.marketing === true) {
-            this.hasConsent = true;
-          }
-        }
-      }
-    } catch (error) {
-      console.log(error);
     }
   }
 
