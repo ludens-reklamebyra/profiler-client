@@ -189,7 +189,7 @@ class Profiler {
     let consentObj: Consents = {};
 
     for (let i in consents) {
-      const key = `consent:${i}`;
+      const key = `'consent:${i}'`;
       consentObj[key] = consents[i];
     }
 
