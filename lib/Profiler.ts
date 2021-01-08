@@ -37,6 +37,12 @@ interface PushDataPointsOpts {
   contactEmail?: string;
 }
 
+type ConsentType = "basic" | "email" | "phone";
+
+type Consents = {
+  [key in ConsentType]?: boolean;
+};
+
 interface PushActionOpts {
   category: string;
   action: string;
@@ -44,6 +50,7 @@ interface PushActionOpts {
   value?: number;
   contactEmail?: string;
   contactData?: ContactData;
+  consents?: Consents;
 }
 
 interface RequestData {
@@ -178,6 +185,17 @@ class Profiler {
     }
   }
 
+  private formatConsent(consents: Consents): Consents {
+    let consentObj: Consents = {};
+
+    for (let i in consents) {
+      const key = `consent:${i}`;
+      consentObj[key] = consents[i];
+    }
+
+    return consentObj;
+  }
+
   public async pushAction(opts: PushActionOpts) {
     try {
       const endpoint = "organizations/" + this.organization + "/actions/push";
@@ -191,6 +209,7 @@ class Profiler {
           value: opts.value,
           email: opts.contactEmail || this.contactEmail,
           contactData: opts.contactData,
+          ...(opts.consents && { ...this.formatConsent(opts.consents) }),
         },
         true
       );
