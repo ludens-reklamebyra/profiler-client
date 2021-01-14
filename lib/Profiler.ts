@@ -4,6 +4,8 @@ import * as cookies from "js-cookie";
 interface Opts {
   organization: string;
   personalize?: boolean;
+  trackSession?: boolean;
+  trackPageView?: boolean;
   dataPointSetDelay?: number;
   contactEmail?: string;
   hasConsent?: boolean;
@@ -104,6 +106,8 @@ class Profiler {
   private organization: string;
   private hasConsent: boolean;
   private personalize: boolean;
+  private trackSession: boolean;
+  private trackPageView: boolean;
   private dpDelay: number;
   private pid?: string;
   private sid?: string;
@@ -115,6 +119,8 @@ class Profiler {
     this.organization = opts.organization;
     this.hasConsent = opts.hasConsent || false;
     this.personalize = opts.personalize || false;
+    this.trackSession = opts.trackSession || false;
+    this.trackPageView = opts.trackPageView || false;
     this.dpDelay = opts.dataPointSetDelay || DEFAULT_DP_DELAY;
     this.contactEmail = opts.contactEmail;
     this.readPidFromCookie();
@@ -250,6 +256,7 @@ class Profiler {
   public async newSession() {
     try {
       if (
+        this.trackSession &&
         document &&
         "referrer" in document &&
         window &&
@@ -486,6 +493,7 @@ class Profiler {
       this.pageView.exit = new Date().toISOString();
 
       if (
+        this.trackPageView &&
         !!navigator &&
         "sendBeacon" in navigator &&
         typeof this.pid === "string"
