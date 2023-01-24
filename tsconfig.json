@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
-    "module": "commonjs",
-    "target": "es5",
-    "lib": ["es5", "es6", "es7", "es2017", "dom"],
+    "outFile": "dist/profiler.js",
+    "module": "AMD",
+    "target": "ES2016",
+    "lib": ["ES2016", "dom"],
     "sourceMap": true,
     "allowJs": false,
     "moduleResolution": "node",

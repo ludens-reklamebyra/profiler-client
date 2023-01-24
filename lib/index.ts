@@ -1,3 +1,4 @@
-import Profiler from './Profiler';
+import Profiler from "./Profiler";
 
-export default Profiler;
+//@ts-ignore Can't be bothered to type this
+window._Profiler = Profiler;

@@ -1,28 +1,11 @@
-import * as qs from "qs";
 import * as cookies from "js-cookie";
 
 interface Opts {
   organization: string;
-  personalize?: boolean;
   trackSession?: boolean;
   trackPageView?: boolean;
-  dataPointSetDelay?: number;
   contactEmail?: string;
   hasConsent?: boolean;
-}
-
-interface UpdateProfileOpts {
-  data: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    addressLine1?: string;
-    addressLine2?: string;
-    addressZip?: string;
-    addressCity?: string;
-    addressCounty?: string;
-    addressCountry?: string;
-  };
 }
 
 interface DataPoint {
@@ -34,56 +17,8 @@ interface PushDataPointOpts extends DataPoint {
   contactEmail?: string;
 }
 
-interface PushDataPointsOpts {
-  dataPoints: DataPoint[];
-  contactEmail?: string;
-}
-
-type ConsentType = "basic" | "email" | "phone";
-
-type Consents = {
-  [key in ConsentType]?: boolean;
-};
-
-interface PushActionOpts {
-  category: string;
-  action: string;
-  label?: string;
-  value?: number;
-  contactEmail?: string;
-  contactData?: ContactData;
-  consents?: Consents;
-}
-
 interface RequestData {
   [key: string]: any;
-}
-
-interface ContactData {
-  name?: string;
-  email?: string;
-  phone?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  addressZip?: string;
-  addressCounty?: string;
-  addressCity?: string;
-  addressCountry?: string;
-}
-
-interface Personalization {
-  _id: string;
-  name: string;
-  js: string | null;
-  html: string | null;
-  htmlQuerySelector: string | null;
-  htmlPlacement: string | null;
-}
-
-interface CollectOpts {
-  campaign: string;
-  collector: string;
-  data: RequestData;
 }
 
 interface PageViewOpts {
@@ -97,18 +32,14 @@ interface PageView {
 }
 
 const PROFILER_URL = "https://api.profiler.marketing";
-const PERSONALIZATION_CLASS_NAME = "__prfPrs";
 const COOKIE_PID_KEY = "__pid";
 const COOKIE_SID_KEY = "__psid";
-const DEFAULT_DP_DELAY = 10000;
 
 class Profiler {
   private organization: string;
   private hasConsent: boolean;
-  private personalize: boolean;
   private trackSession: boolean;
   private trackPageView: boolean;
-  private dpDelay: number;
   private pid?: string;
   private sid?: string;
   private pageView?: PageView;
@@ -118,29 +49,14 @@ class Profiler {
   constructor(opts: Opts) {
     this.organization = opts.organization;
     this.hasConsent = opts.hasConsent || false;
-    this.personalize = opts.personalize || false;
     this.trackSession = opts.trackSession || false;
     this.trackPageView = opts.trackPageView || false;
-    this.dpDelay = opts.dataPointSetDelay || DEFAULT_DP_DELAY;
     this.contactEmail = opts.contactEmail;
     this.readPidFromCookie();
     this.readSidFromCookie();
-    this.handlePersonalizations();
     this.newSession();
     this.newPageView();
     this.listenForPageUnload();
-  }
-
-  public async updateProfile(opts: UpdateProfileOpts) {
-    try {
-      const endpoint = "contacts/update";
-
-      await this.network(endpoint, opts.data, true);
-
-      this.handlePersonalizations();
-    } catch (error) {
-      console.error(error);
-    }
   }
 
   public async pushDataPoint(opts: PushDataPointOpts) {
@@ -156,101 +72,9 @@ class Profiler {
         value: opts.value,
         email: opts.contactEmail || this.contactEmail,
       });
-
-      this.handlePersonalizations();
     } catch (error) {
       console.error(error);
     }
-  }
-
-  public async pushDataPoints(opts: PushDataPointsOpts) {
-    try {
-      const promises: Promise<any>[] = [];
-
-      for (let i = 0; i < opts.dataPoints.length; i++) {
-        const dp = opts.dataPoints[i];
-        const endpoint =
-          "organizations/" +
-          this.organization +
-          "/data-points/" +
-          dp.dataPoint +
-          "/set";
-
-        promises.push(
-          this.network(endpoint, {
-            value: dp.value,
-            email: opts.contactEmail || this.contactEmail,
-          })
-        );
-      }
-
-      await Promise.all(promises);
-      await this.handlePersonalizations();
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  private formatConsent(consents: Consents): Consents {
-    let consentObj: Consents = {};
-
-    for (let i in consents) {
-      const key = `'consent:${i}'`;
-      consentObj[key] = consents[i];
-    }
-
-    return consentObj;
-  }
-
-  public async pushAction(opts: PushActionOpts) {
-    try {
-      const endpoint = "organizations/" + this.organization + "/actions/push";
-
-      await this.network(
-        endpoint,
-        {
-          category: opts.category,
-          action: opts.action,
-          label: opts.label,
-          value: opts.value,
-          email: opts.contactEmail || this.contactEmail,
-          contactData: opts.contactData,
-          ...(opts.consents && { ...this.formatConsent(opts.consents) }),
-        },
-        true
-      );
-
-      this.handlePersonalizations();
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  public async getPersonalizations(): Promise<Personalization[]> {
-    try {
-      const query = {
-        organization: this.organization,
-        ref: this.pid,
-      };
-
-      const response = await fetch(
-        `${PROFILER_URL}/personalization?${qs.stringify(query)}`,
-        {
-          mode: "cors",
-          credentials: "include",
-        }
-      );
-
-      if (response.status === 200) {
-        return (await response.json()) as Personalization[];
-      }
-
-      return [];
-    } catch (error) {
-      console.error(error);
-    }
-
-    return [];
   }
 
   public async newSession() {
@@ -277,62 +101,12 @@ class Profiler {
           true
         );
 
-        this.handlePersonalizations();
-
         if (json && "sessionId" in json) {
           this.setSid(json.sessionId);
         }
       }
     } catch (error) {
       console.error(error);
-    }
-  }
-
-  public async collect(opts: CollectOpts): Promise<Response> {
-    return await this.network(
-      "campaigns/" +
-        opts.campaign +
-        "/collectors/" +
-        opts.collector +
-        "/collect",
-      opts.data,
-      true
-    );
-  }
-
-  public readMeta() {
-    if (window && document) {
-      const metas = document.getElementsByTagName("meta");
-      const dpsToPush: DataPoint[] = [];
-
-      for (let i = 0; i < metas.length; i++) {
-        const meta = metas[i];
-
-        if (meta.getAttribute("name") === "profiler:interests") {
-          const contents = (meta.getAttribute("content") || "").split(",");
-
-          for (let j = 0; j < contents.length; j++) {
-            const contentArr = contents[j].split(":");
-
-            if (contentArr.length > 0) {
-              const ref = contentArr[0];
-              const weight =
-                contentArr.length > 1 ? parseInt(contentArr[1]) : undefined;
-
-              dpsToPush.push({
-                dataPoint: ref,
-                value: weight,
-              });
-            }
-          }
-        }
-      }
-
-      if (dpsToPush.length > 0 && window) {
-        this.dpDelayTimerId = window.setTimeout(() => {
-          this.pushDataPoints({ dataPoints: dpsToPush });
-        }, this.dpDelay);
-      }
     }
   }
 
@@ -348,54 +122,6 @@ class Profiler {
 
     if (!!this.dpDelayTimerId && window) {
       window.clearInterval(this.dpDelayTimerId);
-    }
-
-    this.readMeta();
-  }
-
-  private async handlePersonalizations() {
-    try {
-      if (!this.hasConsent || !this.personalize) {
-        return;
-      }
-
-      if (window) {
-        const personalizations = await this.getPersonalizations();
-
-        this.removePersonalizations();
-
-        for (let i = 0; i < personalizations.length; i++) {
-          const ps = personalizations[i];
-
-          if (ps.html) {
-            const elems = document.querySelectorAll(
-              ps.htmlQuerySelector ? ps.htmlQuerySelector : "body"
-            );
-
-            for (let j = 0; j < elems.length; j++) {
-              const elem = elems[j];
-
-              if (ps.htmlPlacement === "replace") {
-                elem.innerHTML = this.wrapDom(ps.html);
-              } else {
-                elem.insertAdjacentHTML(
-                  //@ts-ignore How to fix this?
-                  ps.htmlPlacement || "beforeend",
-                  this.wrapDom(ps.html)
-                );
-              }
-            }
-          }
-
-          if (ps.js) {
-            const scriptTag = document.createElement("script");
-            scriptTag.innerHTML = ps.js;
-            document.body.appendChild(scriptTag);
-          }
-        }
-      }
-    } catch (error) {
-      console.error(error);
     }
   }
 
@@ -415,7 +141,7 @@ class Profiler {
     let url = `${PROFILER_URL}/${endpoint}`;
 
     if (!asJSON) {
-      url = url + `?${qs.stringify(data)}`;
+      url = url + `?${new URLSearchParams(data).toString()}`;
     }
 
     const response = await fetch(url, {
@@ -435,23 +161,6 @@ class Profiler {
     }
 
     return responseJSON;
-  }
-
-  private wrapDom(html: string): string {
-    return (
-      '<span class="' + PERSONALIZATION_CLASS_NAME + '">' + html + "</span>"
-    );
-  }
-
-  private removePersonalizations() {
-    const elements = document.getElementsByClassName(
-      PERSONALIZATION_CLASS_NAME
-    );
-
-    for (let i = 0; i < elements.length; i++) {
-      const element = elements[i];
-      element.remove();
-    }
   }
 
   private setPid(pid?: string) {
